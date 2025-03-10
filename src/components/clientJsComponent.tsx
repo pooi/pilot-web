@@ -5,6 +5,9 @@ export type CustomClientJs = {
   isMac: () => boolean
   isMobileIOS: () => boolean
   getOS: () => string
+  getOSVersion: () => string
+  getAvailableResolution: () => string
+  getTimeZone: () => string
   getFingerprint: () => number
 }
 

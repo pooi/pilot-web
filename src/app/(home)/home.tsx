@@ -2,21 +2,48 @@
 
 import Lottie from 'react-lottie-player'
 import { useEffect, useState } from 'react'
+import useSWR from 'swr'
+import { SHA1 } from 'crypto-js'
 
 import dynamic from 'next/dynamic'
 import { CustomClientJs } from '../../components/clientJsComponent'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { fetcher } from '@/lib/networks'
+
 const ClientJs = dynamic(() => import('../../components/clientJsComponent'), {
   ssr: false,
 })
 
+type GeoLocation = {
+  IPv4?: string
+  city?: string
+  latitude?: number
+  longitude?: number
+  state?: string
+}
+
 export default function Home() {
   const searchParams = useSearchParams()
   const router = useRouter()
+
   const [client, setClient] = useState<CustomClientJs>()
 
-  const createReferrerId = (client: CustomClientJs) => {
-    return client.getFingerprint()
+  const { data: geoLocation, isLoading: geoLocationLoading } =
+    useSWR<GeoLocation>('https://geolocation-db.com/json/', fetcher)
+
+  const createReferrerId = (client: CustomClientJs, ip?: string) => {
+    const referrerIds = [
+      SHA1(
+        `${client.getOS()}-${client.getOSVersion()}-${client.getAvailableResolution()}`
+      ).toString(),
+      SHA1(
+        `${client.getOS()}-${client.getOSVersion()}-${client.getAvailableResolution()}-${client.getTimeZone()}`
+      ).toString(),
+      SHA1(
+        `${client.getOS()}-${client.getOSVersion()}-${client.getAvailableResolution()}-${client.getTimeZone()}-${ip}`
+      ).toString(),
+    ]
+    return referrerIds.join('/')
   }
 
   const getPromotion = (promotionId: string) => {
@@ -39,18 +66,20 @@ export default function Home() {
   }
 
   const redirectTo = () => {
-    if (client) {
+    if (client && !geoLocationLoading) {
       const parameters = []
 
       const promotionId = searchParams.get('promotionId')
       const promotionDetail = promotionId ? getPromotion(promotionId) : []
       parameters.push(...promotionDetail)
 
-      const referrerId = createReferrerId(client)
+      const ip = geoLocation?.IPv4
+      const referrerId = createReferrerId(client, ip)
       parameters.push(`referrerId=${referrerId}`)
 
       parameters.push(...getDeeplinkParameters(client))
 
+      // console.log(`/bridge?${parameters.join('&')}`)
       router.replace(`/bridge?${parameters.join('&')}`)
     }
   }
@@ -59,7 +88,7 @@ export default function Home() {
     setTimeout(() => {
       redirectTo()
     }, 1000)
-  }, [client])
+  }, [client, geoLocationLoading])
 
   return (
     <>

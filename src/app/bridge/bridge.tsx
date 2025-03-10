@@ -4,11 +4,13 @@ import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { CustomClientJs } from '../../components/clientJsComponent'
 import { DeepLinker } from '@/common/DeepLinker'
+import { useSearchParams } from 'next/navigation'
 const ClientJs = dynamic(() => import('../../components/clientJsComponent'), {
   ssr: false,
 })
 
 export default function Bridge() {
+  const searchParams = useSearchParams()
   const [client, setClient] = useState<CustomClientJs>()
 
   const getDeeplink = (client: CustomClientJs) => {
@@ -42,26 +44,21 @@ export default function Bridge() {
 
   const openApp = () => {
     if (client) {
-      const deeplink = makeUrl(
-        getDeeplink(client),
-        window.location.search.substring(1)
-      )
+      const deeplink = makeUrl(getDeeplink(client), searchParams.toString())
       window.location.href = deeplink
     }
   }
   const installApp = () => {
     if (client) {
-      const storeUrl = makeUrl(
-        getStoreUrl(client),
-        window.location.search.substring(1)
-      )
+      const storeUrl = makeUrl(getStoreUrl(client), searchParams.toString())
       window.location.href = storeUrl
     }
   }
 
   useEffect(() => {
     if (client) {
-      const queryParam = window.location.search.substring(1)
+      const queryParam = searchParams.toString()
+      console.log('queryParam', queryParam)
 
       const storeUrl = makeUrl(getStoreUrl(client), queryParam)
       const deeplink = makeUrl(getDeeplink(client), queryParam)
@@ -90,7 +87,11 @@ export default function Bridge() {
       <ClientJs setClientJs={setClient} />
       <div className="w-full h-screen flex flex-col justify-center items-center gap-y-6 my-[-30px]">
         <div className="flex flex-col items-center">
-          <img src="/SmartThings_logo_full.png" className="w-[210px]" />
+          <img
+            src="/SmartThings_logo_full.png"
+            className="w-[210px]"
+            alt="SmartThings"
+          />
         </div>
         <div className="flex flex-col items-center gap-y-3">
           <div className="flex flex-col gap-y-1 justify-center items-center">

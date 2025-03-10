@@ -1,0 +1,122 @@
+name: main
+
+on:
+  push:
+    branches: ["main"]
+
+env:
+  APP_NAME: "pilot"
+
+jobs:
+  build-docker:
+    runs-on: [iot-action-k8s]
+    outputs:
+      image-tag: ${{ steps.docker-build.outputs.image-tag }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Create release pull request
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { repo, owner } = context.repo;
+            try {
+              const result = await github.rest.pulls.create({
+                title: 'Deploy to STG',
+                owner,
+                repo,
+                head: '${{ github.ref_name }}',
+                base: 'release',
+                body: [
+                  '## Category',
+                  '- [x] Release'
+                ].join('\n')
+              });
+            } catch (error) {
+              console.log(error)
+            }
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.SAMSUNG_DOCKERHUB_USERNAME }}
+          password: ${{ secrets.SAMSUNG_DOCKERHUB_TOKEN }}
+
+      - name: Checkout tools repo
+        uses: actions/checkout@v3
+        with:
+          repository: iot/iot-build-common
+          token: ${{ secrets.BUILD_COMMON_TOKEN }}
+          path: build-common
+
+      - name: Checkout Dockerfile
+        uses: actions/checkout@v3
+        with:
+          repository: iot/iot-dockerfile
+          token: ${{ secrets.BUILD_COMMON_TOKEN }}
+          path: df
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.IOT_RELENG_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.IOT_RELENG_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Extract branch name
+        shell: bash
+        run: |
+          echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+        id: extract_branch
+
+      - name: Build, tag, and push image to Amazon ECR for Master
+        id: docker-build
+        env:
+          DOCKER_ECR_REGION: us-east-2
+          REGISTRY_ID: 926959129150
+          DOCKER_FILE: app_ubuntu22_nodejs20
+          GITHUB_BRANCH: ${{steps.extract_branch.outputs.branch}}
+        run: |
+          CREDENTIALS=$(aws sts assume-role --role-arn arn:aws:iam::642727768135:role/ServerlessAssume --role-session-name "serverless")
+          export AWS_ACCESS_KEY_ID=$(echo $CREDENTIALS | jq -r ".Credentials.AccessKeyId")
+          export AWS_SECRET_ACCESS_KEY=$(echo $CREDENTIALS | jq -r ".Credentials.SecretAccessKey")
+          export AWS_SESSION_TOKEN=$(echo $CREDENTIALS | jq -r ".Credentials.SessionToken")
+
+          export DOCKER_IMG="${REGISTRY_ID}.dkr.ecr.${DOCKER_ECR_REGION}.amazonaws.com/${APP_NAME}"
+          export IMAGE_TAG="$(cat version.txt)-$GITHUB_SHA"
+
+          build-common/action/docker_builder.py --region $DOCKER_ECR_REGION --image $DOCKER_IMG --tag $(cat version.txt)-$GITHUB_SHA --build-arg AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} --build-arg AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} --build-arg AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN} --build-arg VERSION=$(cat version.txt) --stg-release False --dockerfile=Dockerfile.main
+          docker images
+          echo "::set-output name=image-tag::$IMAGE_TAG"
+      - name: Image digest
+        run: |
+          echo ${{ steps.docker_build.outputs.digest }}
+
+  update-image-tag:
+    needs: build-docker
+    runs-on: [iot-action-k8s]
+    env:
+      APP_NAME: pilot
+      IMAGE_TAG: ${{ needs.build-docker.outputs.image-tag }}
+    steps:
+      - name: Checkout out iot_k8s_provisioning
+        uses: actions/checkout@v3
+        with:
+          repository: iot/iot_k8s_provisioning
+          token: ${{ secrets.BUILD_COMMON_TOKEN }}
+          path: iot_k8s_provisioning
+          ref: master
+      - name: Update image tag
+        shell: bash
+        run: |
+          cd iot_k8s_provisioning/helm3/applications/${{ env.APP_NAME }}
+          sed -ri '0,/tag:/{s/^([[:space:]]*)(tag:[[:space:]]*.*)$/\1tag: ${{ env.IMAGE_TAG }}/}' values_dev.yaml
+          grep -m 1 "tag:" values_dev.yaml
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          repository: iot_k8s_provisioning
+          commit_message: |
+            build: automatic image update of ${{ env.APP_NAME }}
+            updates image ${{ env.APP_NAME }} tag to '${{ env.IMAGE_TAG }}'

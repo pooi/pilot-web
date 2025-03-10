@@ -1,0 +1,51 @@
+# https://github.ecodesamsung.com/iot/iot-dockerfile/blob/release/ubuntu22_common/common_ubuntu22_nodejs20
+FROM 926959129150.dkr.ecr.us-east-2.amazonaws.com/common_ubuntu22_nodejs20:release AS dependency
+# ========================service setup==============================
+# use changes to package.json to force Docker not to use the cache
+# when we change our application's nodejs dependencies:
+WORKDIR /tmp
+COPY *.json /tmp/
+
+RUN npm ci
+
+FROM dependency AS builder
+WORKDIR /tmp
+COPY . /tmp
+
+ARG AWS_ACCESS_KEY_ID
+ENV AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+ARG AWS_SECRET_ACCESS_KEY
+ENV AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+ARG AWS_SESSION_TOKEN
+ENV AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
+
+ENV REGION=us-east-2
+ARG VERSION
+ENV VERSION=${VERSION}
+
+FROM 926959129150.dkr.ecr.us-east-2.amazonaws.com/common_ubuntu22_nodejs20:release
+
+RUN adduser --disabled-password --gecos "" runner
+
+ENV APP_NAME=pilot
+ENV APP_PORT=8917
+
+ENV NODE_ENV=production
+ENV NODE_CONFIG_DIR=/${APP_NAME}
+
+
+# Copy all files in this folder
+# If there is a file you don't want to include. please add it to dockignore.
+COPY --chown=runner:runner --from=builder /tmp/ /$APP_NAME/
+RUN chmod +x /$APP_NAME/entrypoint.sh
+
+# Copy app config to the reserved location
+COPY --chown=runner:runner config/*.tmpl /tmp/config/
+
+
+WORKDIR /$APP_NAME
+USER runner
+
+# Start
+EXPOSE $APP_PORT
+CMD ["sh", "-c", "/$APP_NAME/entrypoint.sh"]

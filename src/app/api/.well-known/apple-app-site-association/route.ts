@@ -68,6 +68,6 @@ const association = {
   },
 }
 
-export async function GET(request: Request) {
+export async function GET() {
   return NextResponse.json(association)
 }

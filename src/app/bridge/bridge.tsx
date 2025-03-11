@@ -1,16 +1,17 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { CustomClientJs } from '../../components/clientJsComponent'
-import { DeepLinker } from '@/common/DeepLinker'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+
 const ClientJs = dynamic(() => import('../../components/clientJsComponent'), {
   ssr: false,
 })
 
 export default function Bridge() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const [client, setClient] = useState<CustomClientJs>()
 
   const getDeeplink = (client: CustomClientJs) => {
@@ -42,64 +43,55 @@ export default function Bridge() {
     }
   }
 
-  const openApp = () => {
+  const deepLink = useMemo(() => {
     if (client) {
-      const deeplink = makeUrl(getDeeplink(client), searchParams.toString())
-      window.location.href = deeplink
+      return makeUrl(getDeeplink(client), searchParams.toString())
+    } else {
+      return ''
     }
+  }, [client, searchParams])
+
+  const storeLink = useMemo(() => {
+    if (client) {
+      return makeUrl(getStoreUrl(client), searchParams.toString())
+    } else {
+      return ''
+    }
+  }, [client, searchParams])
+
+  const openApp = () => {
+    window.location.href = deepLink
   }
   const installApp = () => {
-    if (client) {
-      const storeUrl = makeUrl(getStoreUrl(client), searchParams.toString())
-      window.location.href = storeUrl
-    }
+    window.location.href = storeLink
   }
 
   useEffect(() => {
     if (client) {
-      const queryParam = searchParams.toString()
-      console.log('queryParam', queryParam)
-
-      const storeUrl = makeUrl(getStoreUrl(client), queryParam)
-      const deeplink = makeUrl(getDeeplink(client), queryParam)
-
-      const linker = new DeepLinker({
-        onIgnored: function () {
-          // console.log('onIgnored', storeUrl)
-          window.location.href = storeUrl
-        },
-        onFallback: function () {
-          // console.log('onFallback', storeUrl)
-          window.location.href = storeUrl
-        },
-        onReturn: function () {},
-      })
-
       setTimeout(() => {
-        // console.log('openURL', deeplink)
-        linker.openURL(deeplink)
-      }, 1000)
+        router.push(deepLink)
+      }, 500)
     }
   }, [client])
 
   return (
     <>
       <ClientJs setClientJs={setClient} />
-      <div className="w-full h-screen flex flex-col justify-center items-center gap-y-6 my-[-30px]">
+      <div className="w-full h-[100dvh] flex flex-col justify-center items-center gap-y-8 my-[-30px]">
         <div className="flex flex-col items-center">
           <img
-            src="/SmartThings_logo_full.png"
-            className="w-[210px]"
+            src="/SmartThings_pos.png"
+            className="w-[200px]"
             alt="SmartThings"
           />
         </div>
-        <div className="flex flex-col items-center gap-y-3">
+        <div className="flex flex-col items-center gap-y-6" id="abc">
           <div className="flex flex-col gap-y-1 justify-center items-center">
             <button
-              className="w-52 py-2 bg-[#0090fa] text-white font-medium text-sm rounded-lg cursor-pointer hover:bg-[#0075fa] transition-all"
+              className="w-60 py-2 bg-[#0090fa] text-white font-medium text-sm rounded-full cursor-pointer hover:bg-[#0075fa] transition-all"
               onClick={openApp}
             >
-              Open SmartThings
+              Continue with SmartThings
             </button>
             <p className=" font-light text-xs text-gray-600">
               {"If the app doesn't open automatically"}
@@ -107,10 +99,10 @@ export default function Bridge() {
           </div>
           <div className="flex flex-col gap-y-1 justify-center items-center">
             <button
-              className="w-52 py-2 bg-[#0090fa] text-white font-medium text-sm rounded-lg cursor-pointer hover:bg-[#0075fa] transition-all"
+              className="w-60 py-2 bg-black text-white font-medium text-sm rounded-full cursor-pointer hover:bg-black transition-all"
               onClick={installApp}
             >
-              Install SmartThings
+              App Download
             </button>
             <p className=" font-light text-xs text-gray-600">
               {"If the app isn't installed"}

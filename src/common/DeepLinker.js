@@ -10,6 +10,9 @@ export function DeepLinker(options) {
   function onBlur() {
     hasFocus = false
   }
+  this.setFocus = (value) => {
+    hasFocus = value
+  }
 
   // document is hidden when native app is shown or browser is backgrounded
   function onVisibilityChange(e) {
@@ -58,6 +61,7 @@ export function DeepLinker(options) {
 
   this.destroy = bindEvents.bind(null, 'remove')
   this.openURL = function (url) {
+    onBlur()
     var dialogTimeout = 500
 
     setTimeout(function () {

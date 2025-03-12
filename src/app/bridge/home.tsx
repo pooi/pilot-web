@@ -81,7 +81,7 @@ export default function Home() {
       parameters.push(...getDeeplinkParameters(client))
 
       // console.log(`/bridge?${parameters.join('&')}`)
-      router.replace(`/bridge?${parameters.join('&')}`)
+      router.replace(`/bridge/applink?${parameters.join('&')}`)
     }
   }
 
@@ -98,32 +98,18 @@ export default function Home() {
   return (
     <>
       <ClientJs setClientJs={setClient} />
-      <div className="w-full h-[100dvh] flex flex-col justify-center items-center gap-y-2 my-[-30px]">
-        <div className="flex flex-col items-center">
-          <img
-            src="/SmartThings_icon.png"
-            className="w-[100px]"
-            alt="SmartThings"
-          />
-          <img
-            src="/SmartThings_pos.png"
-            className="w-[150px]"
-            alt="SmartThings"
-          />
-        </div>
-        <div className="flex items-center gap-x-2">
-          <Lottie
-            play
-            loop
-            animationData={progressData}
-            style={{
-              minWidth: 'auto',
-              minHeight: 'auto',
-              width: 'min(12vw, 45px)',
-              height: 'min(12vw, 45px)',
-            }}
-          />
-        </div>
+      <div className="flex items-center gap-x-2">
+        <Lottie
+          play
+          loop
+          animationData={progressData}
+          style={{
+            minWidth: 'auto',
+            minHeight: 'auto',
+            width: 'min(12vw, 45px)',
+            height: 'min(12vw, 45px)',
+          }}
+        />
       </div>
     </>
   )

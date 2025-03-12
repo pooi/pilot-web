@@ -1,11 +1,11 @@
 import { Suspense } from 'react'
-import Home from './home'
+import Bridge from './bridge'
 
 export default function Page() {
   return (
     <div>
       <Suspense>
-        <Home />
+        <Bridge />
       </Suspense>
     </div>
   )

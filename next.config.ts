@@ -9,6 +9,11 @@ const nextConfig: NextConfig = {
         destination: '/api/.well-known/:file',
         permanent: false,
       },
+      {
+        source: '/',
+        destination: '/bridge',
+        permanent: false,
+      },
     ]
   },
 }

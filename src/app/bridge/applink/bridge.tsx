@@ -2,12 +2,15 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { CustomClientJs } from '../../components/clientJsComponent'
+import { CustomClientJs } from '../../../components/clientJsComponent'
 import { useRouter, useSearchParams } from 'next/navigation'
 
-const ClientJs = dynamic(() => import('../../components/clientJsComponent'), {
-  ssr: false,
-})
+const ClientJs = dynamic(
+  () => import('../../../components/clientJsComponent'),
+  {
+    ssr: false,
+  }
+)
 
 export default function Bridge() {
   const searchParams = useSearchParams()
@@ -77,37 +80,28 @@ export default function Bridge() {
   return (
     <>
       <ClientJs setClientJs={setClient} />
-      <div className="w-full h-[100dvh] flex flex-col justify-center items-center gap-y-8 my-[-30px]">
-        <div className="flex flex-col items-center">
-          <img
-            src="/SmartThings_pos.png"
-            className="w-[200px]"
-            alt="SmartThings"
-          />
+      <div className="flex flex-col items-center gap-y-6" id="abc">
+        <div className="flex flex-col gap-y-1 justify-center items-center">
+          <button
+            className="w-60 py-2.5 bg-[#006BEA] text-white font-medium text-sm rounded-full cursor-pointer hover:bg-[#008DF7] transition-all"
+            onClick={openApp}
+          >
+            Continue with SmartThings
+          </button>
+          <p className=" font-light text-xs text-gray-600">
+            {"If the app doesn't open automatically"}
+          </p>
         </div>
-        <div className="flex flex-col items-center gap-y-6" id="abc">
-          <div className="flex flex-col gap-y-1 justify-center items-center">
-            <button
-              className="w-60 py-2 bg-[#0090fa] text-white font-medium text-sm rounded-full cursor-pointer hover:bg-[#0075fa] transition-all"
-              onClick={openApp}
-            >
-              Continue with SmartThings
-            </button>
-            <p className=" font-light text-xs text-gray-600">
-              {"If the app doesn't open automatically"}
-            </p>
-          </div>
-          <div className="flex flex-col gap-y-1 justify-center items-center">
-            <button
-              className="w-60 py-2 bg-black text-white font-medium text-sm rounded-full cursor-pointer hover:bg-black transition-all"
-              onClick={installApp}
-            >
-              App Download
-            </button>
-            <p className=" font-light text-xs text-gray-600">
-              {"If the app isn't installed"}
-            </p>
-          </div>
+        <div className="flex flex-col gap-y-1 justify-center items-center">
+          <button
+            className="w-60 py-2.5 bg-black text-white font-medium text-sm rounded-full cursor-pointer hover:bg-black transition-all"
+            onClick={installApp}
+          >
+            App Download
+          </button>
+          <p className=" font-light text-xs text-gray-600">
+            {"If the app isn't installed"}
+          </p>
         </div>
       </div>
     </>

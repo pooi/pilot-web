@@ -35,12 +35,6 @@ export default function Home() {
   const createReferrerId = (client: CustomClientJs, ip?: string) => {
     const referrerIds = [
       SHA1(
-        `${client.getOS()}-${client.getOSVersion()}-${client.getAvailableResolution()}`
-      ).toString(),
-      SHA1(
-        `${client.getOS()}-${client.getOSVersion()}-${client.getAvailableResolution()}-${client.getTimeZone()}`
-      ).toString(),
-      SHA1(
         `${client.getOS()}-${client.getOSVersion()}-${client.getAvailableResolution()}-${client.getTimeZone()}-${ip}`
       ).toString(),
     ]
@@ -57,15 +51,6 @@ export default function Home() {
     }
   }
 
-  const getDeeplinkParameters = (client: CustomClientJs) => {
-    const parameters = []
-    if (client.getOS().toLowerCase().includes('android')) {
-      parameters.push('package=com.samsung.android.oneconnect')
-      parameters.push('id=com.samsung.android.oneconnect')
-    }
-    return parameters
-  }
-
   const redirectTo = () => {
     if (client && !geoLocationLoading) {
       const parameters = []
@@ -78,9 +63,6 @@ export default function Home() {
       const referrerId = createReferrerId(client, ip)
       parameters.push(`referrerId=${referrerId}`)
 
-      parameters.push(...getDeeplinkParameters(client))
-
-      // console.log(`/bridge?${parameters.join('&')}`)
       router.replace(`/bridge/applink?${parameters.join('&')}`)
     }
   }

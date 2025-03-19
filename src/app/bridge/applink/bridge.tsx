@@ -17,38 +17,53 @@ export default function Bridge() {
   const router = useRouter()
   const [client, setClient] = useState<CustomClientJs>()
 
-  const getDeeplink = (client: CustomClientJs) => {
+  const getDeeplink = (
+    client: CustomClientJs,
+    additionalQueryParam: string
+  ) => {
     const os = client.getOS().toLowerCase()
     if (os.includes('ios') || os.includes('mac')) {
-      return process.env.NEXT_PUBLIC_IOS_DEEPLINK ?? 'samsungconnect://launch'
+      return (
+        (process.env.NEXT_PUBLIC_IOS_DEEPLINK ?? '') +
+        '?' +
+        additionalQueryParam
+      )
     } else {
-      return process.env.NEXT_PUBLIC_ANDROID_DEEPLINK ?? 'scapp://launch'
+      return (
+        (process.env.NEXT_PUBLIC_ANDROID_DEEPLINK ?? '') +
+        '&' +
+        additionalQueryParam
+      )
     }
   }
 
-  const getStoreUrl = (client: CustomClientJs) => {
+  const getStoreUrl = (
+    client: CustomClientJs,
+    additionalQueryParam: string
+  ) => {
     let storeUrl = ''
     if (client.isMac() || client.isMobileIOS()) {
-      storeUrl = process.env.NEXT_PUBLIC_APPLE_APPSTORE_URL ?? ''
+      storeUrl =
+        (process.env.NEXT_PUBLIC_APPLE_APPSTORE_URL ?? '') +
+        '?' +
+        additionalQueryParam
     } else if (client.getOS().toLowerCase().includes('android')) {
-      storeUrl = process.env.NEXT_PUBLIC_PLAY_STORE_URL ?? ''
+      storeUrl =
+        (process.env.NEXT_PUBLIC_PLAY_STORE_URL ?? '') +
+        '&referrer=' +
+        additionalQueryParam
     } else {
-      storeUrl = process.env.NEXT_PUBLIC_PLAY_STORE_URL ?? ''
+      storeUrl =
+        (process.env.NEXT_PUBLIC_PLAY_STORE_URL ?? '') +
+        '&referrer=' +
+        additionalQueryParam
     }
     return storeUrl
   }
 
-  const makeUrl = (baseUrl: string, queryParam: string): string => {
-    if (baseUrl.endsWith('?')) {
-      return `${baseUrl}${queryParam}`
-    } else {
-      return `${baseUrl}?${queryParam}`
-    }
-  }
-
   const deepLink = useMemo(() => {
     if (client) {
-      return makeUrl(getDeeplink(client), searchParams.toString())
+      return getDeeplink(client, searchParams.toString())
     } else {
       return ''
     }
@@ -56,7 +71,7 @@ export default function Bridge() {
 
   const storeLink = useMemo(() => {
     if (client) {
-      return makeUrl(getStoreUrl(client), searchParams.toString())
+      return getStoreUrl(client, searchParams.toString())
     } else {
       return ''
     }

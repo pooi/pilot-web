@@ -20,12 +20,19 @@ export default function Home() {
 
   const [client, setClient] = useState<CustomClientJs>()
 
-  const createReferrerId = async (client: CustomClientJs) => {
+  const createReferrer = async (
+    client: CustomClientJs,
+    campaign: string | null,
+    queryParams: string
+  ) => {
     const body: CreateReferrerRequest = {
+      campaign: campaign,
+      queryParams: queryParams,
       os: client.getOS(),
       osVersion: client.getOSVersion(),
       resolution: client.getAvailableResolution(),
       timezone: client.getTimeZone(),
+      browserFingerprint: client.getFingerprint().toString(),
     }
     const { data } = await axios.post<CreateReferrerResponse>(
       `/api/referrer`,
@@ -37,29 +44,23 @@ export default function Home() {
         },
       }
     )
-    return data.referrerId
-  }
-
-  const getPromotion = (promotionId: string) => {
-    if (promotionId === '123') {
-      return ['action=how_to_use']
-    } else if (promotionId === '456') {
-      return ['action=service']
-    } else {
-      return ['foo=bar', 'baz=qux']
-    }
+    return data
   }
 
   const redirectTo = async () => {
     if (client) {
       const parameters = []
 
-      const promotionId = searchParams.get('promotionId')
-      const promotionDetail = promotionId ? getPromotion(promotionId) : []
-      parameters.push(...promotionDetail)
+      const queryParams = searchParams.toString()
+      const campaign = searchParams.get('utm_campaign')
+      const referrer = await createReferrer(client, campaign, queryParams)
 
-      const referrerId = await createReferrerId(client)
-      parameters.push(`referrerId=${referrerId}`)
+      if (referrer.referrerId) {
+        parameters.push(`referrerId=${referrer.referrerId}`)
+      }
+      if (referrer.deeplinkParameter) {
+        parameters.push(referrer.deeplinkParameter)
+      }
 
       router.replace(`/bridge/applink?${parameters.join('&')}`)
     }

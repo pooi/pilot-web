@@ -2,12 +2,10 @@
 
 import Lottie from 'react-lottie-player'
 import { useEffect, useState } from 'react'
-import useSWR from 'swr'
 
 import dynamic from 'next/dynamic'
 import { CustomClientJs } from '../../components/clientJsComponent'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { fetcher } from '@/lib/networks'
 import progressData from '@/assets/progress_circle.json'
 import axios from 'axios'
 import { CreateReferrerRequest, CreateReferrerResponse } from '@/common/model'
@@ -16,30 +14,18 @@ const ClientJs = dynamic(() => import('../../components/clientJsComponent'), {
   ssr: false,
 })
 
-type GeoLocation = {
-  IPv4?: string
-  city?: string
-  latitude?: number
-  longitude?: number
-  state?: string
-}
-
 export default function Home() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
   const [client, setClient] = useState<CustomClientJs>()
 
-  const { data: geoLocation, isLoading: geoLocationLoading } =
-    useSWR<GeoLocation>('https://geolocation-db.com/json/', fetcher)
-
-  const createReferrerId = async (client: CustomClientJs, ip?: string) => {
+  const createReferrerId = async (client: CustomClientJs) => {
     const body: CreateReferrerRequest = {
       os: client.getOS(),
       osVersion: client.getOSVersion(),
       resolution: client.getAvailableResolution(),
       timezone: client.getTimeZone(),
-      ip: ip
     }
     const { data } = await axios.post<CreateReferrerResponse>(
       `/api/referrer`,
@@ -65,15 +51,14 @@ export default function Home() {
   }
 
   const redirectTo = async () => {
-    if (client && !geoLocationLoading) {
+    if (client) {
       const parameters = []
 
       const promotionId = searchParams.get('promotionId')
       const promotionDetail = promotionId ? getPromotion(promotionId) : []
       parameters.push(...promotionDetail)
 
-      const ip = geoLocation?.IPv4
-      const referrerId = await createReferrerId(client, ip)
+      const referrerId = await createReferrerId(client)
       parameters.push(`referrerId=${referrerId}`)
 
       router.replace(`/bridge/applink?${parameters.join('&')}`)
@@ -88,7 +73,7 @@ export default function Home() {
     setTimeout(() => {
       redirectTo()
     }, 1000)
-  }, [client, geoLocationLoading])
+  }, [client])
 
   return (
     <>

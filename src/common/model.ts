@@ -3,7 +3,6 @@ export type CreateReferrerRequest = {
   osVersion: string
   resolution: string
   timezone: string
-  ip?: string
 }
 
 export type CreateReferrerResponse = {

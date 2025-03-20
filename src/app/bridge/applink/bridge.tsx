@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { CustomClientJs } from '../../../components/clientJsComponent'
 import { useRouter, useSearchParams } from 'next/navigation'
-import Link from 'next/link'
 
 const ClientJs = dynamic(
   () => import('../../../components/clientJsComponent'),
@@ -78,6 +77,13 @@ export default function Bridge() {
     }
   }, [client, searchParams])
 
+  const openApp = () => {
+    window.location.href = deepLink
+  }
+  const installApp = () => {
+    window.location.href = storeLink
+  }
+
   useEffect(() => {
     if (client) {
       setTimeout(() => {
@@ -91,23 +97,23 @@ export default function Bridge() {
       <ClientJs setClientJs={setClient} />
       <div className="flex flex-col items-center gap-y-6" id="abc">
         <div className="flex flex-col gap-y-1 justify-center items-center">
-          <Link
-            className="w-60 py-2.5 bg-[#006BEA] text-white text-center font-medium text-sm rounded-full cursor-pointer hover:bg-[#008DF7] transition-all"
-            href={deepLink}
+          <button
+            className="w-60 py-2.5 bg-[#006BEA] text-white font-medium text-sm rounded-full cursor-pointer hover:bg-[#008DF7] transition-all"
+            onClick={openApp}
           >
             Continue with SmartThings
-          </Link>
+          </button>
           <p className=" font-light text-xs text-gray-600">
             {"If the app doesn't open automatically"}
           </p>
         </div>
         <div className="flex flex-col gap-y-1 justify-center items-center">
-          <Link
-            className="w-60 py-2.5 bg-black text-white text-center font-medium text-sm rounded-full cursor-pointer hover:bg-black transition-all"
-            href={storeLink}
+          <button
+            className="w-60 py-2.5 bg-black text-white font-medium text-sm rounded-full cursor-pointer hover:bg-black transition-all"
+            onClick={installApp}
           >
             App Download
-          </Link>
+          </button>
           <p className=" font-light text-xs text-gray-600">
             {"If the app isn't installed"}
           </p>

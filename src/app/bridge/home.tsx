@@ -3,13 +3,14 @@
 import Lottie from 'react-lottie-player'
 import { useEffect, useState } from 'react'
 import useSWR from 'swr'
-import { SHA1 } from 'crypto-js'
 
 import dynamic from 'next/dynamic'
 import { CustomClientJs } from '../../components/clientJsComponent'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { fetcher } from '@/lib/networks'
 import progressData from '@/assets/progress_circle.json'
+import axios from 'axios'
+import { CreateReferrerRequest, CreateReferrerResponse } from '@/common/model'
 
 const ClientJs = dynamic(() => import('../../components/clientJsComponent'), {
   ssr: false,
@@ -32,13 +33,25 @@ export default function Home() {
   const { data: geoLocation, isLoading: geoLocationLoading } =
     useSWR<GeoLocation>('https://geolocation-db.com/json/', fetcher)
 
-  const createReferrerId = (client: CustomClientJs, ip?: string) => {
-    const referrerIds = [
-      SHA1(
-        `${client.getOS()}-${client.getOSVersion()}-${client.getAvailableResolution()}-${client.getTimeZone()}-${ip}`
-      ).toString(),
-    ]
-    return referrerIds.join('/')
+  const createReferrerId = async (client: CustomClientJs, ip?: string) => {
+    const body: CreateReferrerRequest = {
+      os: client.getOS(),
+      osVersion: client.getOSVersion(),
+      resolution: client.getAvailableResolution(),
+      timezone: client.getTimeZone(),
+      ip: ip
+    }
+    const { data } = await axios.post<CreateReferrerResponse>(
+      `/api/referrer`,
+      body,
+      {
+        headers: {
+          'Content-type': 'application/json',
+          Accept: 'application/json',
+        },
+      }
+    )
+    return data.referrerId
   }
 
   const getPromotion = (promotionId: string) => {
@@ -51,7 +64,7 @@ export default function Home() {
     }
   }
 
-  const redirectTo = () => {
+  const redirectTo = async () => {
     if (client && !geoLocationLoading) {
       const parameters = []
 
@@ -60,7 +73,7 @@ export default function Home() {
       parameters.push(...promotionDetail)
 
       const ip = geoLocation?.IPv4
-      const referrerId = createReferrerId(client, ip)
+      const referrerId = await createReferrerId(client, ip)
       parameters.push(`referrerId=${referrerId}`)
 
       router.replace(`/bridge/applink?${parameters.join('&')}`)

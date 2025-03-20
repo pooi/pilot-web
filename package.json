@@ -12,7 +12,6 @@
     "@capacitor/device": "^7.0.0",
     "axios": "^1.8.1",
     "clientjs": "^0.2.1",
-    "crypto-js": "^4.2.0",
     "dayjs": "^1.11.13",
     "next": "15.2.1",
     "react": "^19.0.0",

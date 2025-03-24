@@ -9,6 +9,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import progressData from '@/assets/progress_circle.json'
 import axios from 'axios'
 import { CreateReferrerRequest, CreateReferrerResponse } from '@/common/model'
+import ClientDetail from './(common)/clientDetail'
 
 const ClientJs = dynamic(() => import('../../components/clientJsComponent'), {
   ssr: false,
@@ -31,6 +32,7 @@ export default function Home() {
       os: client.getOS(),
       osVersion: client.getOSVersion(),
       resolution: client.getAvailableResolution(),
+      colorDepth: client.getColorDepth(),
       timezone: client.getTimeZone(),
       browserFingerprint: client.getFingerprint().toString(),
     }
@@ -79,7 +81,8 @@ export default function Home() {
   return (
     <>
       <ClientJs setClientJs={setClient} />
-      <div className="flex items-center gap-x-2">
+      <div className="flex flex-col items-center gap-x-2 gap-y-3">
+        {client && <ClientDetail client={client} />}
         <Lottie
           play
           loop

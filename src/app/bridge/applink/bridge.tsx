@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { CustomClientJs } from '../../../components/clientJsComponent'
 import { useRouter, useSearchParams } from 'next/navigation'
+import ClientDetail from '../(common)/clientDetail'
 
 const ClientJs = dynamic(
   () => import('../../../components/clientJsComponent'),
@@ -96,6 +97,7 @@ export default function Bridge() {
     <>
       <ClientJs setClientJs={setClient} />
       <div className="flex flex-col items-center gap-y-6" id="abc">
+        {client && <ClientDetail client={client} />}
         <div className="flex flex-col gap-y-1 justify-center items-center">
           <button
             className="w-60 py-2.5 bg-[#006BEA] text-white font-medium text-sm rounded-full cursor-pointer hover:bg-[#008DF7] transition-all"

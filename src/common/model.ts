@@ -4,6 +4,7 @@ export type CreateReferrerRequest = {
   os: string
   osVersion: string
   resolution: string
+  colorDepth: string
   timezone: string
   browserFingerprint: string
 }
